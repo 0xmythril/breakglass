@@ -192,7 +192,11 @@ export function ConfigScreen({
 
             <footer className="built-by">
               <div className="built-by-label">FORGED IN DESPERATION BY</div>
-              <div className="built-by-name">0xMythril</div>
+              <div className="built-by-name">
+                <a href="https://x.com/0xmythril" target="_blank" rel="noopener noreferrer">
+                  0xMythril
+                </a>
+              </div>
               <div className="built-by-date">after getting funds trapped 😢 // 2025.12.29</div>
             </footer>
           </div>
