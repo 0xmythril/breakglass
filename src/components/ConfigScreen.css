@@ -65,6 +65,61 @@
   animation: blink 1s step-end infinite;
 }
 
+/* Provider Selector */
+.provider-selector {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  margin: 1rem 0 1.5rem 0;
+}
+
+.provider-btn {
+  font-family: var(--font-pixel);
+  font-size: 0.75rem;
+  padding: 0.75rem 0.5rem;
+  background: var(--color-bg-darker);
+  border: 2px solid var(--color-primary-dim);
+  color: var(--color-text-dim);
+  cursor: pointer;
+  transition: all 0.1s;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.provider-btn:hover:not(.disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.provider-btn.selected {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: rgba(255, 204, 0, 0.1);
+  box-shadow: 0 0 10px rgba(255, 204, 0, 0.2);
+}
+
+.provider-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.provider-btn .provider-name {
+  font-size: 0.875rem;
+  letter-spacing: 1px;
+}
+
+.provider-btn .coming-soon {
+  font-size: 0.5rem;
+  color: var(--color-text-dim);
+  background: var(--color-bg);
+  padding: 0.125rem 0.375rem;
+  border: 1px solid var(--color-text-dim);
+  letter-spacing: 1px;
+}
+
 .config-form {
   margin-top: 1.5rem;
 }
@@ -133,6 +188,23 @@
 .pixel-button:active {
   transform: translate(4px, 4px);
   box-shadow: none;
+}
+
+.pixel-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pixel-button:disabled:hover {
+  background: var(--color-bg-darker);
+  color: var(--color-accent);
+  transform: none;
+  box-shadow: 4px 4px 0 var(--color-accent-dim);
+}
+
+.pixel-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .help-text {

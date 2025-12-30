@@ -298,3 +298,12 @@ body::after {
   50% { content: '..'; }
   75% { content: '...'; }
 }
+
+/* Coming Soon Screen */
+.coming-soon-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}

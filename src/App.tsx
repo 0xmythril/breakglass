@@ -1,13 +1,15 @@
 import { useState, useEffect, createContext, useContext, useCallback } from 'react';
 import { PrivyProvider, usePrivy } from '@privy-io/react-auth';
 import { ConfigScreen, LoginScreen, Dashboard } from './components';
+import type { MPCProvider } from './components';
 import { usePrivyAdapter } from './adapters/privy';
 import { DEFAULT_CHAIN_ID } from './chains/config';
 import './index.css';
 
 // Check for environment variable
 const ENV_APP_ID = import.meta.env.VITE_PRIVY_APP_ID;
-const STORAGE_KEY = 'breakglass_privy_app_id';
+const STORAGE_KEY_APP_ID = 'breakglass_app_id';
+const STORAGE_KEY_PROVIDER = 'breakglass_provider';
 
 // Error context to pass errors from Privy callbacks to components
 interface ErrorContextType {
@@ -62,25 +64,29 @@ function parsePrivyError(error: unknown): string {
   return 'Authentication failed. Please try again or use a different login method.';
 }
 
-function getStoredAppId(): string {
+function getStoredConfig(): { provider: MPCProvider; appId: string } {
   try {
-    return localStorage.getItem(STORAGE_KEY) || '';
+    const provider = (localStorage.getItem(STORAGE_KEY_PROVIDER) as MPCProvider) || 'privy';
+    const appId = localStorage.getItem(STORAGE_KEY_APP_ID) || '';
+    return { provider, appId };
   } catch {
-    return '';
+    return { provider: 'privy', appId: '' };
   }
 }
 
-function storeAppId(appId: string) {
+function storeConfig(provider: MPCProvider, appId: string) {
   try {
-    localStorage.setItem(STORAGE_KEY, appId);
+    localStorage.setItem(STORAGE_KEY_PROVIDER, provider);
+    localStorage.setItem(STORAGE_KEY_APP_ID, appId);
   } catch {
     // localStorage not available
   }
 }
 
-function clearStoredAppId() {
+function clearStoredConfig() {
   try {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY_PROVIDER);
+    localStorage.removeItem(STORAGE_KEY_APP_ID);
   } catch {
     // localStorage not available
   }
@@ -189,30 +195,65 @@ function PrivyWrapper({ appId, onReset }: { appId: string; onReset: () => void }
   );
 }
 
-export default function App() {
-  const storedAppId = getStoredAppId();
-  const initialAppId = ENV_APP_ID || storedAppId || '';
-  const initialConfigured = !!(ENV_APP_ID || storedAppId);
+// Placeholder for future providers
+function ComingSoonWrapper({ provider, onReset }: { provider: MPCProvider; onReset: () => void }) {
+  return (
+    <div className="coming-soon-screen">
+      <div className="pixel-border" style={{ padding: '2rem', textAlign: 'center' }}>
+        <h2 style={{ color: 'var(--color-accent)', marginBottom: '1rem' }}>
+          {provider.toUpperCase()} SUPPORT
+        </h2>
+        <p style={{ color: 'var(--color-text-dim)', marginBottom: '1.5rem' }}>
+          Coming soon! This provider is not yet supported.
+        </p>
+        <button onClick={onReset} className="pixel-button">
+          [BACK TO CONFIG]
+        </button>
+      </div>
+    </div>
+  );
+}
 
+export default function App() {
+  const storedConfig = getStoredConfig();
+  const initialAppId = ENV_APP_ID || storedConfig.appId || '';
+  const initialProvider = storedConfig.provider || 'privy';
+  const initialConfigured = !!(ENV_APP_ID || storedConfig.appId);
+
+  const [provider, setProvider] = useState<MPCProvider>(initialProvider);
   const [appId, setAppId] = useState<string>(initialAppId);
   const [isConfigured, setIsConfigured] = useState(initialConfigured);
 
-  const handleConfigure = (id: string) => {
+  const handleConfigure = (selectedProvider: MPCProvider, id: string) => {
+    setProvider(selectedProvider);
     setAppId(id);
-    storeAppId(id);
+    storeConfig(selectedProvider, id);
     setIsConfigured(true);
   };
 
   const handleReset = () => {
-    clearStoredAppId();
+    clearStoredConfig();
+    setProvider('privy');
     setAppId('');
     setIsConfigured(false);
   };
 
   // If not configured, show config screen
   if (!isConfigured) {
-    return <ConfigScreen onConfigure={handleConfigure} defaultAppId={appId} />;
+    return (
+      <ConfigScreen 
+        onConfigure={handleConfigure} 
+        defaultProvider={provider}
+        defaultAppId={appId} 
+      />
+    );
   }
 
-  return <PrivyWrapper appId={appId} onReset={handleReset} />;
+  // Route to appropriate provider wrapper
+  switch (provider) {
+    case 'privy':
+      return <PrivyWrapper appId={appId} onReset={handleReset} />;
+    default:
+      return <ComingSoonWrapper provider={provider} onReset={handleReset} />;
+  }
 }

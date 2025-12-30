@@ -1,14 +1,37 @@
 import { useState } from 'react';
 import './ConfigScreen.css';
 
+export type MPCProvider = 'privy' | 'web3auth' | 'dynamic' | 'turnkey';
+
+interface ProviderOption {
+  id: MPCProvider;
+  name: string;
+  available: boolean;
+}
+
+const PROVIDERS: ProviderOption[] = [
+  { id: 'privy', name: 'Privy', available: true },
+  { id: 'web3auth', name: 'Web3Auth', available: false },
+  { id: 'dynamic', name: 'Dynamic', available: false },
+  { id: 'turnkey', name: 'Turnkey', available: false },
+];
+
 interface ConfigScreenProps {
-  onConfigure: (appId: string) => void;
+  onConfigure: (provider: MPCProvider, appId: string) => void;
+  defaultProvider?: MPCProvider;
   defaultAppId?: string;
 }
 
-export function ConfigScreen({ onConfigure, defaultAppId = '' }: ConfigScreenProps) {
+export function ConfigScreen({ 
+  onConfigure, 
+  defaultProvider = 'privy',
+  defaultAppId = '' 
+}: ConfigScreenProps) {
+  const [provider, setProvider] = useState<MPCProvider>(defaultProvider);
   const [appId, setAppId] = useState(defaultAppId);
   const [error, setError] = useState('');
+
+  const selectedProviderInfo = PROVIDERS.find(p => p.id === provider);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,8 +39,77 @@ export function ConfigScreen({ onConfigure, defaultAppId = '' }: ConfigScreenPro
       setError('App ID is required');
       return;
     }
+    if (!selectedProviderInfo?.available) {
+      setError(`${selectedProviderInfo?.name} is coming soon`);
+      return;
+    }
     setError('');
-    onConfigure(appId.trim());
+    onConfigure(provider, appId.trim());
+  };
+
+  const getAppIdLabel = () => {
+    switch (provider) {
+      case 'privy':
+        return 'ENTER PRIVY APP ID:';
+      case 'web3auth':
+        return 'ENTER WEB3AUTH CLIENT ID:';
+      case 'dynamic':
+        return 'ENTER DYNAMIC ENVIRONMENT ID:';
+      case 'turnkey':
+        return 'ENTER TURNKEY ORG ID:';
+      default:
+        return 'ENTER APP ID:';
+    }
+  };
+
+  const getAppIdPlaceholder = () => {
+    switch (provider) {
+      case 'privy':
+        return 'clxxxxxxxxxxxxxxxxxx';
+      case 'web3auth':
+        return 'BPxxxxxxxxxxxxxxxxxx';
+      case 'dynamic':
+        return 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
+      case 'turnkey':
+        return 'org-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
+      default:
+        return 'Enter your app ID';
+    }
+  };
+
+  const getHelpText = () => {
+    switch (provider) {
+      case 'privy':
+        return (
+          <>
+            <p>★ Get your App ID from dashboard.privy.io</p>
+            <p>★ This domain must be whitelisted on Privy</p>
+          </>
+        );
+      case 'web3auth':
+        return (
+          <>
+            <p>★ Get your Client ID from dashboard.web3auth.io</p>
+            <p>★ Configure allowed origins in Web3Auth</p>
+          </>
+        );
+      case 'dynamic':
+        return (
+          <>
+            <p>★ Get your Environment ID from app.dynamic.xyz</p>
+            <p>★ Add this domain to allowed origins</p>
+          </>
+        );
+      case 'turnkey':
+        return (
+          <>
+            <p>★ Get your Org ID from app.turnkey.com</p>
+            <p>★ Configure allowed origins in Turnkey</p>
+          </>
+        );
+      default:
+        return null;
+    }
   };
 
   return (
@@ -36,36 +128,57 @@ export function ConfigScreen({ onConfigure, defaultAppId = '' }: ConfigScreenPro
               <span className="prompt">&gt;</span> SYSTEM BOOT SEQUENCE...
             </div>
             <div className="terminal-text">
-              <span className="prompt">&gt;</span> MPC ADAPTER: PRIVY
+              <span className="prompt">&gt;</span> SELECT MPC PROVIDER_
             </div>
+
+            {/* Provider Selector */}
+            <div className="provider-selector">
+              {PROVIDERS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  className={`provider-btn ${provider === p.id ? 'selected' : ''} ${!p.available ? 'disabled' : ''}`}
+                  onClick={() => p.available && setProvider(p.id)}
+                  disabled={!p.available}
+                >
+                  <span className="provider-name">{p.name}</span>
+                  {!p.available && <span className="coming-soon">SOON</span>}
+                </button>
+              ))}
+            </div>
+
             <div className="terminal-text blink">
               <span className="prompt">&gt;</span> AWAITING APP_ID INPUT_
             </div>
 
             <form onSubmit={handleSubmit} className="config-form">
               <label htmlFor="appId" className="form-label">
-                ENTER PRIVY APP ID:
+                {getAppIdLabel()}
               </label>
               <input
                 type="text"
                 id="appId"
                 value={appId}
                 onChange={(e) => setAppId(e.target.value)}
-                placeholder="clxxxxxxxxxxxxxxxxxx"
+                placeholder={getAppIdPlaceholder()}
                 className="pixel-input"
                 autoComplete="off"
                 spellCheck={false}
+                disabled={!selectedProviderInfo?.available}
               />
               {error && <p className="error-text">{error}</p>}
 
-              <button type="submit" className="pixel-button">
+              <button 
+                type="submit" 
+                className="pixel-button"
+                disabled={!selectedProviderInfo?.available}
+              >
                 <span className="button-text">[ INITIALIZE ]</span>
               </button>
             </form>
 
             <div className="help-text">
-              <p>★ Get your App ID from dashboard.privy.io</p>
-              <p>★ This domain must be whitelisted on Privy</p>
+              {getHelpText()}
             </div>
 
             <footer className="built-by">
@@ -81,4 +194,3 @@ export function ConfigScreen({ onConfigure, defaultAppId = '' }: ConfigScreenPro
     </div>
   );
 }
-
