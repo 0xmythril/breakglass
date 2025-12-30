@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './ConfigScreen.css';
 
-export type MPCProvider = 'privy' | 'web3auth' | 'dynamic' | 'turnkey';
+export type MPCProvider = 'privy' | 'air' | 'web3auth' | 'turnkey' | 'dynamic' | 'magic';
 
 interface ProviderOption {
   id: MPCProvider;
@@ -11,9 +11,11 @@ interface ProviderOption {
 
 const PROVIDERS: ProviderOption[] = [
   { id: 'privy', name: 'Privy', available: true },
+  { id: 'air', name: 'AIR', available: false },
   { id: 'web3auth', name: 'Web3Auth', available: false },
-  { id: 'dynamic', name: 'Dynamic', available: false },
   { id: 'turnkey', name: 'Turnkey', available: false },
+  { id: 'dynamic', name: 'Dynamic', available: false },
+  { id: 'magic', name: 'Magic', available: false },
 ];
 
 interface ConfigScreenProps {
@@ -47,31 +49,20 @@ export function ConfigScreen({
     onConfigure(provider, appId.trim());
   };
 
-  const getAppIdLabel = () => {
-    switch (provider) {
-      case 'privy':
-        return 'ENTER PRIVY APP ID:';
-      case 'web3auth':
-        return 'ENTER WEB3AUTH CLIENT ID:';
-      case 'dynamic':
-        return 'ENTER DYNAMIC ENVIRONMENT ID:';
-      case 'turnkey':
-        return 'ENTER TURNKEY ORG ID:';
-      default:
-        return 'ENTER APP ID:';
-    }
-  };
-
   const getAppIdPlaceholder = () => {
     switch (provider) {
       case 'privy':
         return 'clxxxxxxxxxxxxxxxxxx';
+      case 'air':
+        return 'air_xxxxxxxxxxxxxxxxxx';
       case 'web3auth':
         return 'BPxxxxxxxxxxxxxxxxxx';
       case 'dynamic':
         return 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
       case 'turnkey':
         return 'org-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
+      case 'magic':
+        return 'pk_live_xxxxxxxxxxxxxxxxxx';
       default:
         return 'Enter your app ID';
     }
@@ -84,6 +75,13 @@ export function ConfigScreen({
           <>
             <p>★ Get your App ID from dashboard.privy.io</p>
             <p>★ This domain must be whitelisted on Privy</p>
+          </>
+        );
+      case 'air':
+        return (
+          <>
+            <p>★ Get your App ID from AIR dashboard</p>
+            <p>★ This domain must be whitelisted</p>
           </>
         );
       case 'web3auth':
@@ -105,6 +103,13 @@ export function ConfigScreen({
           <>
             <p>★ Get your Org ID from app.turnkey.com</p>
             <p>★ Configure allowed origins in Turnkey</p>
+          </>
+        );
+      case 'magic':
+        return (
+          <>
+            <p>★ Get your Publishable Key from dashboard.magic.link</p>
+            <p>★ Add this domain to allowed origins</p>
           </>
         );
       default:
@@ -142,7 +147,11 @@ export function ConfigScreen({
                   disabled={!p.available}
                 >
                   <span className="provider-name">{p.name}</span>
-                  {!p.available && <span className="coming-soon">SOON</span>}
+                  {p.available ? (
+                    <span className="status-live">LIVE</span>
+                  ) : (
+                    <span className="status-soon">SOON</span>
+                  )}
                 </button>
               ))}
             </div>
@@ -153,7 +162,7 @@ export function ConfigScreen({
 
             <form onSubmit={handleSubmit} className="config-form">
               <label htmlFor="appId" className="form-label">
-                {getAppIdLabel()}
+                ENTER APP ID:
               </label>
               <input
                 type="text"
