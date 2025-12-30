@@ -19,15 +19,17 @@
   padding: 0.75rem;
 }
 
-.section-title {
-  font-size: 0.625rem;
+.sweep-modal .section-title {
+  font-size: 0.875rem;
   color: var(--color-text-dim);
   margin-bottom: 0.75rem;
   letter-spacing: 1px;
 }
 
+/* Transfer row - responsive layout */
 .transfer-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0;
@@ -46,19 +48,19 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  min-width: 80px;
+  min-width: 70px;
   cursor: pointer;
 }
 
 .checkbox-label input[type="checkbox"] {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   accent-color: var(--color-primary);
   cursor: pointer;
 }
 
 .checkbox-label .token-symbol {
-  font-size: 0.75rem;
+  font-size: 1rem;
   color: var(--color-accent);
 }
 
@@ -66,16 +68,17 @@
   display: flex;
   flex: 1;
   gap: 0.25rem;
+  min-width: 100px;
 }
 
 .amount-input {
   flex: 1;
   font-family: var(--font-mono);
-  font-size: 0.875rem;
+  font-size: 1rem;
   background: var(--color-bg);
   border: 2px solid var(--color-primary-dim);
   color: var(--color-text);
-  padding: 0.25rem 0.5rem;
+  padding: 0.5rem;
   min-width: 0;
 }
 
@@ -91,13 +94,14 @@
 
 .max-btn {
   font-family: var(--font-pixel);
-  font-size: 0.5rem;
+  font-size: 0.625rem;
   background: var(--color-bg);
   border: 2px solid var(--color-accent);
   color: var(--color-accent);
-  padding: 0.25rem 0.5rem;
+  padding: 0.5rem 0.75rem;
   cursor: pointer;
   transition: all 0.1s;
+  white-space: nowrap;
 }
 
 .max-btn:hover:not(:disabled) {
@@ -112,10 +116,10 @@
 
 .balance-hint {
   font-family: var(--font-mono);
-  font-size: 0.625rem;
+  font-size: 0.875rem;
   color: var(--color-text-dim);
-  min-width: 70px;
-  text-align: right;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .pixel-button.danger {
@@ -140,19 +144,19 @@
 }
 
 .confirm-icon {
-  font-size: 2rem;
+  font-size: 2.5rem;
   margin-bottom: 0.5rem;
 }
 
 .confirm-text {
-  font-size: 0.75rem;
+  font-size: 1rem;
   color: var(--color-text);
   margin-bottom: 0.5rem;
 }
 
 .confirm-dest {
   font-family: var(--font-mono);
-  font-size: 0.625rem;
+  font-size: 1.25rem;
   word-break: break-all;
   margin-bottom: 1rem;
 }
@@ -176,8 +180,8 @@
   display: flex;
   justify-content: space-between;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
-  padding: 0.25rem 0;
+  font-size: 1.5rem;
+  padding: 0.5rem 0;
 }
 
 /* Progress Step */
@@ -187,7 +191,7 @@
 
 .progress-title {
   text-align: center;
-  font-size: 0.875rem;
+  font-size: 1.125rem;
   color: var(--color-primary);
   margin-bottom: 1rem;
   letter-spacing: 2px;
@@ -201,7 +205,7 @@
 .tx-row {
   display: flex;
   flex-direction: column;
-  padding: 0.5rem 0.75rem;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--color-primary-dim);
 }
 
@@ -225,17 +229,17 @@
 }
 
 .tx-symbol {
-  font-size: 0.75rem;
+  font-size: 1rem;
   color: var(--color-accent);
 }
 
 .tx-status {
-  font-size: 0.875rem;
+  font-size: 1.25rem;
 }
 
 .tx-hash {
   font-family: var(--font-mono);
-  font-size: 0.625rem;
+  font-size: 0.875rem;
   color: var(--color-primary);
   text-decoration: none;
 }
@@ -246,7 +250,126 @@
 
 .tx-error {
   font-family: var(--font-mono);
-  font-size: 0.5rem;
+  font-size: 0.75rem;
   color: var(--color-danger);
   word-break: break-word;
+}
+
+/* =============================================
+   MODAL ACTION BUTTONS - Unified sizing
+   ============================================= */
+.sweep-modal .modal-actions {
+  display: flex;
+  align-items: stretch;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+/* Base styles for ALL buttons in modal actions */
+.sweep-modal .modal-actions > button {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: top;
+  height: 3rem;
+  padding: 0 1rem;
+  font-family: var(--font-pixel);
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.1s;
+  box-sizing: border-box;
+  margin: 0;
+}
+
+/* Cancel button styling */
+.sweep-modal .modal-actions .cancel-btn {
+  background: transparent;
+  border: 3px solid var(--color-text-dim);
+  color: var(--color-text-dim);
+  box-shadow: 4px 4px 0 rgba(102, 102, 102, 0.3);
+}
+
+.sweep-modal .modal-actions .cancel-btn:hover {
+  border-color: var(--color-text);
+  color: var(--color-text);
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 rgba(102, 102, 102, 0.3);
+}
+
+.sweep-modal .modal-actions .cancel-btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: none;
+}
+
+/* Primary button styling (CONTINUE, CONFIRM) */
+.sweep-modal .modal-actions .pixel-button {
+  background: var(--color-bg-darker);
+  border: 3px solid var(--color-accent);
+  color: var(--color-accent);
+  box-shadow: 4px 4px 0 var(--color-accent-dim);
+}
+
+.sweep-modal .modal-actions .pixel-button:hover {
+  background: var(--color-accent);
+  color: var(--color-bg);
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--color-accent-dim);
+}
+
+.sweep-modal .modal-actions .pixel-button:active {
+  transform: translate(4px, 4px);
+  box-shadow: none;
+}
+
+/* Danger button variant */
+.sweep-modal .modal-actions .pixel-button.danger {
+  background: linear-gradient(135deg, var(--color-danger), #ff6b6b);
+  border-color: var(--color-danger);
+  color: white;
+  box-shadow: 4px 4px 0 rgba(255, 107, 107, 0.3);
+}
+
+.sweep-modal .modal-actions .pixel-button.danger:hover {
+  background: var(--color-danger);
+  color: white;
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 rgba(255, 107, 107, 0.3);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 480px) {
+  .sweep-modal {
+    max-width: 100%;
+  }
+  
+  .transfer-row {
+    flex-wrap: wrap;
+  }
+  
+  .checkbox-label {
+    min-width: 60px;
+  }
+  
+  .amount-input-group {
+    flex: 1 1 auto;
+    min-width: 80px;
+  }
+  
+  .balance-hint {
+    font-size: 0.75rem;
+    width: 100%;
+    text-align: left;
+    padding-left: 28px; /* Align with checkbox */
+  }
+  
+  .sweep-modal .modal-actions > button {
+    height: 2.75rem;
+    font-size: 0.625rem;
+  }
+  
+  .confirm-summary .summary-row {
+    font-size: 1.25rem;
+  }
 }

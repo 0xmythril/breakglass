@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { createPublicClient, http, parseAbi, encodeFunctionData, isAddress, parseUnits, formatUnits, formatEther } from 'viem';
 import { SUPPORTED_CHAINS, getExplorerTxUrl } from '../chains/config';
 import type { MPCAdapter } from '../adapters/types';
@@ -27,6 +27,16 @@ interface TransferItem {
   enabled: boolean;
 }
 
+// Confirmed transfer - amount is locked in as bigint
+interface ConfirmedTransfer {
+  type: 'native' | 'token';
+  symbol: string;
+  address?: `0x${string}`;
+  decimals: number;
+  amountRaw: bigint; // Parsed amount in smallest units
+  amountDisplay: string; // For display
+}
+
 interface TxResult {
   type: 'native' | 'token';
   symbol: string;
@@ -44,16 +54,10 @@ export function SweepModal({
   onClose,
   onComplete,
 }: SweepModalProps) {
-  const [destination, setDestination] = useState('');
-  const [step, setStep] = useState<'input' | 'confirm' | 'executing' | 'complete'>('input');
-  const [results, setResults] = useState<TxResult[]>([]);
-  const [error, setError] = useState('');
-  const [transfers, setTransfers] = useState<TransferItem[]>([]);
-
   const chainConfig = SUPPORTED_CHAINS[chainId];
 
-  // Initialize transfer items from balances
-  useEffect(() => {
+  // Initialize transfer items from balances - using lazy initial state (runs only once)
+  const [transfers, setTransfers] = useState<TransferItem[]>(() => {
     const items: TransferItem[] = [];
 
     // Add native balance
@@ -83,8 +87,15 @@ export function SweepModal({
       }
     });
 
-    setTransfers(items);
-  }, [nativeBalance, tokenBalances, chainConfig]);
+    return items;
+  });
+
+  const [destination, setDestination] = useState('');
+  const [confirmedDestination, setConfirmedDestination] = useState('');
+  const [confirmedTransfers, setConfirmedTransfers] = useState<ConfirmedTransfer[]>([]);
+  const [step, setStep] = useState<'input' | 'confirm' | 'executing' | 'complete'>('input');
+  const [results, setResults] = useState<TxResult[]>([]);
+  const [error, setError] = useState('');
 
   const updateTransfer = (index: number, updates: Partial<TransferItem>) => {
     setTransfers((prev) =>
@@ -113,17 +124,25 @@ export function SweepModal({
     }
 
     const enabled = getEnabledTransfers();
+    console.log('[BreakGlass] Enabled transfers:', enabled.map(t => ({ symbol: t.symbol, amount: t.amount, enabled: t.enabled })));
+    
     if (enabled.length === 0) {
       setError('No assets selected for transfer');
       return;
     }
 
-    // Validate amounts
+    // Validate and parse amounts - lock them in NOW
+    const confirmed: ConfirmedTransfer[] = [];
+    
     for (const item of enabled) {
       try {
+        console.log(`[BreakGlass] Parsing ${item.symbol}: amount="${item.amount}", decimals=${item.decimals}`);
+        
         const parsed = item.type === 'native'
           ? parseUnits(item.amount, 18)
           : parseUnits(item.amount, item.decimals);
+        
+        console.log(`[BreakGlass] Parsed ${item.symbol}: ${parsed.toString()} (raw units)`);
         
         if (parsed > item.balance) {
           setError(`${item.symbol} amount exceeds balance`);
@@ -133,12 +152,27 @@ export function SweepModal({
           setError(`${item.symbol} amount must be greater than 0`);
           return;
         }
+
+        // Store the confirmed transfer with parsed amount
+        confirmed.push({
+          type: item.type,
+          symbol: item.symbol,
+          address: item.address,
+          decimals: item.decimals,
+          amountRaw: parsed,
+          amountDisplay: item.amount,
+        });
       } catch {
         setError(`Invalid amount for ${item.symbol}`);
         return;
       }
     }
 
+    console.log('[BreakGlass] Confirmed transfers:', confirmed.map(t => ({ symbol: t.symbol, amountDisplay: t.amountDisplay, amountRaw: t.amountRaw.toString() })));
+
+    // Lock in the confirmed transfers and destination
+    setConfirmedTransfers(confirmed);
+    setConfirmedDestination(destination);
     setError('');
     setStep('confirm');
   };
@@ -147,15 +181,22 @@ export function SweepModal({
     setStep('executing');
     const txResults: TxResult[] = [];
 
+    console.log('[BreakGlass] executeTransfer called');
+    console.log('[BreakGlass] confirmedTransfers:', confirmedTransfers.map(t => ({ symbol: t.symbol, amountRaw: t.amountRaw.toString(), amountDisplay: t.amountDisplay })));
+    console.log('[BreakGlass] confirmedDestination:', confirmedDestination);
+
     const client = createPublicClient({
       chain: chainConfig.chain,
       transport: http(chainConfig.rpcUrl),
     });
 
-    const enabledTransfers = getEnabledTransfers();
+    // Use confirmedTransfers (already parsed) instead of re-reading from transfers state
+    const dest = confirmedDestination as `0x${string}`;
 
-    // Transfer tokens first
-    for (const item of enabledTransfers.filter((t) => t.type === 'token')) {
+    // Transfer tokens first (using confirmed amounts)
+    for (const item of confirmedTransfers.filter((t) => t.type === 'token')) {
+      console.log(`[BreakGlass] Sending ${item.symbol}: amountRaw=${item.amountRaw.toString()}, to contract=${item.address}`);
+      
       const result: TxResult = {
         type: 'token',
         symbol: item.symbol,
@@ -166,12 +207,14 @@ export function SweepModal({
       setResults([...txResults]);
 
       try {
-        const amount = parseUnits(item.amount, item.decimals);
+        // Use the pre-parsed amount
         const data = encodeFunctionData({
           abi: ERC20_TRANSFER_ABI,
           functionName: 'transfer',
-          args: [destination as `0x${string}`, amount],
+          args: [dest, item.amountRaw],
         });
+
+        console.log(`[BreakGlass] Encoded transfer data for ${item.symbol}:`, data);
 
         const hash = await adapter.sendTransaction({
           to: item.address!,
@@ -180,16 +223,16 @@ export function SweepModal({
 
         result.hash = hash;
         result.status = 'success';
-      } catch (err: any) {
+      } catch (err: unknown) {
         result.status = 'failed';
-        result.error = err.message || 'Transaction failed';
+        result.error = err instanceof Error ? err.message : 'Transaction failed';
       }
 
       setResults([...txResults]);
     }
 
-    // Transfer native balance
-    const nativeItem = enabledTransfers.find((t) => t.type === 'native');
+    // Transfer native balance (using confirmed amount)
+    const nativeItem = confirmedTransfers.find((t) => t.type === 'native');
     if (nativeItem) {
       const result: TxResult = {
         type: 'native',
@@ -201,9 +244,9 @@ export function SweepModal({
       setResults([...txResults]);
 
       try {
-        let amount = parseUnits(nativeItem.amount, 18);
+        let amount = nativeItem.amountRaw;
 
-        // If sending max, subtract gas estimate
+        // If sending max (compare with original balance), subtract gas estimate
         if (amount === nativeBalance) {
           const gasPrice = await client.getGasPrice();
           const gasLimit = 21000n;
@@ -213,7 +256,7 @@ export function SweepModal({
 
         if (amount > 0n) {
           const hash = await adapter.sendTransaction({
-            to: destination as `0x${string}`,
+            to: dest,
             value: amount,
           });
 
@@ -223,9 +266,9 @@ export function SweepModal({
           result.status = 'failed';
           result.error = 'Insufficient balance for gas';
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         result.status = 'failed';
-        result.error = err.message || 'Transaction failed';
+        result.error = err instanceof Error ? err.message : 'Transaction failed';
       }
 
       setResults([...txResults]);
@@ -328,14 +371,14 @@ export function SweepModal({
                 Confirm transfer to:
               </p>
               <div className="confirm-dest">
-                <span className="address">{destination}</span>
+                <span className="address">{confirmedDestination}</span>
               </div>
 
               <div className="confirm-summary">
-                {getEnabledTransfers().map((item) => (
+                {confirmedTransfers.map((item) => (
                   <div key={`${item.type}-${item.symbol}`} className="summary-row">
                     <span>{item.symbol}</span>
-                    <span>{item.amount}</span>
+                    <span>{item.amountDisplay}</span>
                   </div>
                 ))}
               </div>
@@ -343,7 +386,7 @@ export function SweepModal({
 
             <div className="modal-actions">
               <button onClick={() => setStep('input')} className="cancel-btn">
-                [GO BACK]
+                [BACK]
               </button>
               <button onClick={executeTransfer} className="pixel-button danger">
                 [CONFIRM]

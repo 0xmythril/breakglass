@@ -108,7 +108,7 @@ export function LoginScreen({
             <p className="security-note">
               🔒 Client-side only
               <br />
-              🗄️ No data is stored by us
+              ❌ No data is stored by us
             </p>
 
             {onReset && (

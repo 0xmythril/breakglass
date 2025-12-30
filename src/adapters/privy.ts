@@ -1,13 +1,13 @@
-import { usePrivy, useWallets } from '@privy-io/react-auth';
+import { usePrivy, useWallets, useSendTransaction } from '@privy-io/react-auth';
 import { useMemo, useCallback } from 'react';
 import type { MPCAdapter } from './types';
 import type { TransactionRequest } from 'viem';
-import { createWalletClient, custom } from 'viem';
 import { SUPPORTED_CHAINS, DEFAULT_CHAIN_ID } from '../chains/config';
 
 export function usePrivyAdapter(chainId: number = DEFAULT_CHAIN_ID): MPCAdapter {
   const { ready, authenticated, login, logout } = usePrivy();
   const { wallets } = useWallets();
+  const { sendTransaction: privySendTransaction } = useSendTransaction();
 
   // Find the embedded wallet (created by Privy)
   const embeddedWallet = useMemo(() => {
@@ -33,32 +33,39 @@ export function usePrivyAdapter(chainId: number = DEFAULT_CHAIN_ID): MPCAdapter 
       // Switch to the correct chain if needed
       await embeddedWallet.switchChain(chainId);
 
-      // Get the EIP-1193 provider
-      const provider = await embeddedWallet.getEthereumProvider();
-
-      // Create a wallet client with the provider
-      const walletClient = createWalletClient({
-        chain: chainConfig.chain,
-        transport: custom(provider),
-      });
-
-      // Build transaction params, only including defined values
-      const txParams: Parameters<typeof walletClient.sendTransaction>[0] = {
-        account: embeddedWallet.address as `0x${string}`,
-        to: tx.to as `0x${string}`,
-        chain: chainConfig.chain,
+      // Build transaction request for Privy's sendTransaction
+      // Using Privy's useSendTransaction hook with sponsor: true for gas sponsorship
+      const txRequest: {
+        to: string;
+        value?: bigint;
+        data?: string;
+        chainId: number;
+      } = {
+        to: tx.to as string,
+        chainId: chainId,
       };
 
-      if (tx.value !== undefined) txParams.value = tx.value;
-      if (tx.data) txParams.data = tx.data as `0x${string}`;
-      if (tx.gas !== undefined) txParams.gas = tx.gas;
+      if (tx.value !== undefined) {
+        txRequest.value = tx.value;
+      }
+      if (tx.data) {
+        txRequest.data = tx.data as string;
+      }
 
-      // Send the transaction
-      const hash = await walletClient.sendTransaction(txParams);
+      console.log('[BreakGlass] Sending transaction via Privy:', txRequest);
 
-      return hash;
+      // Use Privy's sendTransaction with sponsor: true
+      // This enables gas sponsorship if configured in the Privy dashboard
+      const result = await privySendTransaction(txRequest, {
+        sponsor: true, // Enable gas sponsorship
+      });
+
+      console.log('[BreakGlass] Transaction result:', result);
+
+      // The result contains the transaction hash
+      return result.hash;
     },
-    [embeddedWallet, chainId]
+    [embeddedWallet, chainId, privySendTransaction]
   );
 
   return {
