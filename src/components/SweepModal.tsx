@@ -91,7 +91,9 @@ export function SweepModal({
   });
 
   const [destination, setDestination] = useState('');
+  const [sponsorGas, setSponsorGas] = useState(false);
   const [confirmedDestination, setConfirmedDestination] = useState('');
+  const [confirmedSponsorGas, setConfirmedSponsorGas] = useState(false);
   const [confirmedTransfers, setConfirmedTransfers] = useState<ConfirmedTransfer[]>([]);
   const [step, setStep] = useState<'input' | 'confirm' | 'executing' | 'complete'>('input');
   const [results, setResults] = useState<TxResult[]>([]);
@@ -124,7 +126,6 @@ export function SweepModal({
     }
 
     const enabled = getEnabledTransfers();
-    console.log('[BreakGlass] Enabled transfers:', enabled.map(t => ({ symbol: t.symbol, amount: t.amount, enabled: t.enabled })));
     
     if (enabled.length === 0) {
       setError('No assets selected for transfer');
@@ -136,13 +137,9 @@ export function SweepModal({
     
     for (const item of enabled) {
       try {
-        console.log(`[BreakGlass] Parsing ${item.symbol}: amount="${item.amount}", decimals=${item.decimals}`);
-        
         const parsed = item.type === 'native'
           ? parseUnits(item.amount, 18)
           : parseUnits(item.amount, item.decimals);
-        
-        console.log(`[BreakGlass] Parsed ${item.symbol}: ${parsed.toString()} (raw units)`);
         
         if (parsed > item.balance) {
           setError(`${item.symbol} amount exceeds balance`);
@@ -168,11 +165,10 @@ export function SweepModal({
       }
     }
 
-    console.log('[BreakGlass] Confirmed transfers:', confirmed.map(t => ({ symbol: t.symbol, amountDisplay: t.amountDisplay, amountRaw: t.amountRaw.toString() })));
-
-    // Lock in the confirmed transfers and destination
+    // Lock in the confirmed transfers, destination, and gas sponsorship setting
     setConfirmedTransfers(confirmed);
     setConfirmedDestination(destination);
+    setConfirmedSponsorGas(sponsorGas);
     setError('');
     setStep('confirm');
   };
@@ -181,10 +177,6 @@ export function SweepModal({
     setStep('executing');
     const txResults: TxResult[] = [];
 
-    console.log('[BreakGlass] executeTransfer called');
-    console.log('[BreakGlass] confirmedTransfers:', confirmedTransfers.map(t => ({ symbol: t.symbol, amountRaw: t.amountRaw.toString(), amountDisplay: t.amountDisplay })));
-    console.log('[BreakGlass] confirmedDestination:', confirmedDestination);
-
     const client = createPublicClient({
       chain: chainConfig.chain,
       transport: http(chainConfig.rpcUrl),
@@ -192,11 +184,12 @@ export function SweepModal({
 
     // Use confirmedTransfers (already parsed) instead of re-reading from transfers state
     const dest = confirmedDestination as `0x${string}`;
+    const txOptions = { sponsorGas: confirmedSponsorGas };
+
+    console.log('[BreakGlass] executeTransfer - sponsorGas:', confirmedSponsorGas);
 
     // Transfer tokens first (using confirmed amounts)
     for (const item of confirmedTransfers.filter((t) => t.type === 'token')) {
-      console.log(`[BreakGlass] Sending ${item.symbol}: amountRaw=${item.amountRaw.toString()}, to contract=${item.address}`);
-      
       const result: TxResult = {
         type: 'token',
         symbol: item.symbol,
@@ -214,12 +207,10 @@ export function SweepModal({
           args: [dest, item.amountRaw],
         });
 
-        console.log(`[BreakGlass] Encoded transfer data for ${item.symbol}:`, data);
-
         const hash = await adapter.sendTransaction({
           to: item.address!,
           data,
-        });
+        }, txOptions);
 
         result.hash = hash;
         result.status = 'success';
@@ -247,7 +238,8 @@ export function SweepModal({
         let amount = nativeItem.amountRaw;
 
         // If sending max (compare with original balance), subtract gas estimate
-        if (amount === nativeBalance) {
+        // Skip gas deduction if gas is sponsored
+        if (amount === nativeBalance && !confirmedSponsorGas) {
           const gasPrice = await client.getGasPrice();
           const gasLimit = 21000n;
           const gasCost = gasPrice * gasLimit * 2n; // 2x buffer
@@ -258,7 +250,7 @@ export function SweepModal({
           const hash = await adapter.sendTransaction({
             to: dest,
             value: amount,
-          });
+          }, txOptions);
 
           result.hash = hash;
           result.status = 'success';
@@ -350,6 +342,23 @@ export function SweepModal({
               ))}
             </div>
 
+            {/* Gas Sponsorship Toggle */}
+            <div className="gas-sponsor-toggle">
+              <label className="toggle-label">
+                <input
+                  type="checkbox"
+                  checked={sponsorGas}
+                  onChange={(e) => setSponsorGas(e.target.checked)}
+                />
+                <span className="toggle-text">⛽ Enable Gas Sponsorship</span>
+              </label>
+              <p className="toggle-hint">
+                {sponsorGas 
+                  ? '✓ App will pay gas fees (requires Privy dashboard config)'
+                  : 'You will pay gas fees from your wallet'}
+              </p>
+            </div>
+
             {error && <p className="error-text">{error}</p>}
 
             <div className="modal-actions">
@@ -381,6 +390,14 @@ export function SweepModal({
                     <span>{item.amountDisplay}</span>
                   </div>
                 ))}
+              </div>
+
+              <div className="confirm-gas-info">
+                {confirmedSponsorGas ? (
+                  <span className="gas-sponsored">⛽ Gas Sponsored</span>
+                ) : (
+                  <span className="gas-self-pay">⛽ You pay gas</span>
+                )}
               </div>
             </div>
 

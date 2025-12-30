@@ -1,5 +1,10 @@
 import type { TransactionRequest } from 'viem';
 
+export interface SendTransactionOptions {
+  /** Enable gas sponsorship (requires Privy dashboard configuration) */
+  sponsorGas?: boolean;
+}
+
 export interface MPCAdapter {
   /** Initialize the adapter (called once on mount) */
   init(): Promise<void>;
@@ -20,7 +25,7 @@ export interface MPCAdapter {
   getAddress(): `0x${string}` | null;
 
   /** Sign and send a transaction, returns the tx hash */
-  sendTransaction(tx: TransactionRequest): Promise<`0x${string}`>;
+  sendTransaction(tx: TransactionRequest, options?: SendTransactionOptions): Promise<`0x${string}`>;
 
   /** Export the private key (if supported by the provider) */
   exportPrivateKey?(): Promise<string>;
@@ -36,4 +41,3 @@ export interface AdapterConfig {
   appId: string;
   chainId?: number;
 }
-

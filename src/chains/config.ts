@@ -102,7 +102,7 @@ export const SUPPORTED_CHAINS: Record<number, ChainConfig> = {
     chain: polygon,
     rpcUrl: 'https://polygon-rpc.com',
     explorerUrl: 'https://polygonscan.com',
-    nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 },
+    nativeCurrency: { name: 'POL', symbol: 'POL', decimals: 18 },
     defaultTokens: getDefaultTokens(137),
   },
   42161: {

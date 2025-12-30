@@ -338,6 +338,60 @@
   box-shadow: 2px 2px 0 rgba(255, 107, 107, 0.3);
 }
 
+/* Gas Sponsorship Toggle */
+.gas-sponsor-toggle {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  background: var(--color-bg-darker);
+  border: 2px solid var(--color-primary-dim);
+}
+
+.gas-sponsor-toggle .toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.gas-sponsor-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.gas-sponsor-toggle .toggle-text {
+  font-family: var(--font-pixel);
+  font-size: 0.875rem;
+  color: var(--color-text);
+  letter-spacing: 1px;
+}
+
+.gas-sponsor-toggle .toggle-hint {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-text-dim);
+  margin: 0.5rem 0 0 0;
+  padding-left: 28px; /* Align with checkbox */
+}
+
+/* Confirm step gas info */
+.confirm-gas-info {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-primary-dim);
+}
+
+.confirm-gas-info .gas-sponsored {
+  color: var(--color-primary);
+  font-size: 0.875rem;
+}
+
+.confirm-gas-info .gas-self-pay {
+  color: var(--color-text-dim);
+  font-size: 0.875rem;
+}
+
 /* Mobile responsiveness */
 @media (max-width: 480px) {
   .sweep-modal {

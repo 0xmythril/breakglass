@@ -1,6 +1,6 @@
 import { usePrivy, useWallets, useSendTransaction } from '@privy-io/react-auth';
 import { useMemo, useCallback } from 'react';
-import type { MPCAdapter } from './types';
+import type { MPCAdapter, SendTransactionOptions } from './types';
 import type { TransactionRequest } from 'viem';
 import { SUPPORTED_CHAINS, DEFAULT_CHAIN_ID } from '../chains/config';
 
@@ -20,7 +20,7 @@ export function usePrivyAdapter(chainId: number = DEFAULT_CHAIN_ID): MPCAdapter 
   }, [embeddedWallet]);
 
   const sendTransaction = useCallback(
-    async (tx: TransactionRequest): Promise<`0x${string}`> => {
+    async (tx: TransactionRequest, options?: SendTransactionOptions): Promise<`0x${string}`> => {
       if (!embeddedWallet) {
         throw new Error('No embedded wallet found');
       }
@@ -34,7 +34,6 @@ export function usePrivyAdapter(chainId: number = DEFAULT_CHAIN_ID): MPCAdapter 
       await embeddedWallet.switchChain(chainId);
 
       // Build transaction request for Privy's sendTransaction
-      // Using Privy's useSendTransaction hook with sponsor: true for gas sponsorship
       const txRequest: {
         to: string;
         value?: bigint;
@@ -52,17 +51,20 @@ export function usePrivyAdapter(chainId: number = DEFAULT_CHAIN_ID): MPCAdapter 
         txRequest.data = tx.data as string;
       }
 
-      console.log('[BreakGlass] Sending transaction via Privy:', txRequest);
+      const sponsorGas = options?.sponsorGas ?? false;
 
-      // Use Privy's sendTransaction with sponsor: true
-      // This enables gas sponsorship if configured in the Privy dashboard
+      console.log('[BreakGlass] Sending transaction via Privy:', {
+        ...txRequest,
+        sponsorGas,
+      });
+
+      // Use Privy's sendTransaction with optional gas sponsorship
       const result = await privySendTransaction(txRequest, {
-        sponsor: true, // Enable gas sponsorship
+        sponsor: sponsorGas,
       });
 
       console.log('[BreakGlass] Transaction result:', result);
 
-      // The result contains the transaction hash
       return result.hash;
     },
     [embeddedWallet, chainId, privySendTransaction]
@@ -82,8 +84,6 @@ export function usePrivyAdapter(chainId: number = DEFAULT_CHAIN_ID): MPCAdapter 
     isLoading: !ready,
     getAddress,
     sendTransaction,
-    // Note: exportPrivateKey is not directly available via SDK
-    // Users would need to use Privy's built-in export UI
     providerName: 'Privy',
   };
 }
