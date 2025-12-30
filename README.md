@@ -1,39 +1,56 @@
-# BreakGlass 🔓
+# 🔓 BreakGlass
 
-**The "In Case of Emergency" Open Source Wallet Interface**
+**Recover funds from embedded wallets — even if the original app goes offline.**
 
-BreakGlass is a lightweight, client-side-only React application designed to help users recover funds from MPC embedded wallets (Privy, Web3Auth, etc.) even if the original application goes offline.
+BreakGlass is an open-source, self-hostable emergency recovery tool for MPC (Multi-Party Computation) embedded wallets. It provides users with a way to access and transfer their funds if the main application frontend or backend becomes unavailable.
 
-## Why BreakGlass?
+![License](https://img.shields.io/badge/license-MIT-green)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue)
+![React](https://img.shields.io/badge/React-19-blue)
+![Vite](https://img.shields.io/badge/Vite-7-purple)
 
-Embedded wallets (MPC) are great for UX but introduce "Vendor & Frontend Risk." If a startup shuts down or their main frontend goes offline, users lose access to their funds because they don't have a seed phrase—they only have their social login and the app's interface.
+## 🎯 The Problem
 
-BreakGlass solves this by providing a universal recovery interface that:
-- Reconstructs your wallet key in-memory via social auth
-- Displays balances across multiple EVM chains
-- Allows you to "sweep" all funds to an external wallet
+Embedded wallets (like those from Privy, Web3Auth, Dynamic, etc.) are great for user experience — no seed phrases to manage, just login with Google/Apple/Email. But they introduce **vendor & frontend risk**:
 
-## Features
+- If the startup shuts down, users lose access to their funds
+- If the main frontend goes offline (AWS/Vercel outage), users can't access their wallet
+- Users only have their social login — they depend entirely on the app's interface
 
-- 🔐 **Social Auth Recovery** - Login with the same method you used in the original app
-- ⛓️ **Multi-Chain Support** - Ethereum, Base, Polygon, Arbitrum, Sepolia
-- 💰 **Token Management** - Add custom ERC20 tokens by contract address
-- 🚀 **Emergency Sweep** - Transfer all funds to your external wallet
-- 🌐 **Fully Client-Side** - No backend, no tracking, fully auditable
-- 🖥️ **Retro Aesthetic** - Because recovering funds should feel like hacking a mainframe
+## 💡 The Solution
 
-## Supported MPC Providers
+BreakGlass is a **lightweight, client-side-only** recovery interface that:
 
-- ✅ **Privy** (v1 - current)
-- 🔜 Web3Auth (Phase 2)
-- 🔜 Coinbase CDP (Phase 2)
-- 🔜 Dynamic (Phase 2)
+1. Connects to the same MPC provider (Privy, Web3Auth, etc.)
+2. Authenticates using the same social login method
+3. Reconstructs the wallet in-browser
+4. Allows users to transfer funds to an external wallet (MetaMask, etc.)
 
-## Quick Start
+**No backend required. No data stored. Fully auditable.**
+
+## ✨ Features
+
+- 🔐 **Client-side only** — Private keys never leave your browser
+- 🌐 **Multi-chain support** — Ethereum, Polygon, Base, Arbitrum, Sepolia
+- 💸 **Transfer native tokens & ERC20s** — ETH, POL, USDC, and custom tokens
+- ⛽ **Gas sponsorship toggle** — Use app-sponsored gas if configured
+- 🎨 **Retro/pixel aesthetic** — Distinctive emergency-mode UI
+- 📱 **Mobile responsive** — Works on all devices
+- 🔧 **Self-hostable** — Deploy to your own domain
+
+## 🚀 Quick Start
+
+### Option 1: Use the hosted version
+
+Visit the hosted BreakGlass instance and enter your app's Privy App ID.
+
+> ⚠️ **Important**: The domain you access BreakGlass from must be whitelisted in the MPC provider's dashboard.
+
+### Option 2: Deploy your own
 
 ```bash
-# Clone the repo
-git clone https://github.com/your-org/breakglass.git
+# Clone the repository
+git clone https://github.com/yourusername/breakglass.git
 cd breakglass
 
 # Install dependencies
@@ -41,104 +58,181 @@ npm install
 
 # Run development server
 npm run dev
-```
 
-Visit `http://localhost:5173` and enter your Privy App ID.
-
-## Configuration
-
-### Option 1: Environment Variable (Recommended for deployment)
-
-Create a `.env` file:
-
-```env
-VITE_PRIVY_APP_ID=your-privy-app-id
-VITE_DEFAULT_CHAIN_ID=1
-```
-
-### Option 2: Dynamic Input
-
-Leave the environment variable empty and users can enter the App ID at runtime.
-
-## Deployment
-
-### Vercel (Recommended)
-
-1. Connect your repo to Vercel
-2. Add `VITE_PRIVY_APP_ID` to environment variables
-3. Deploy!
-
-The `vercel.json` is pre-configured for SPA routing.
-
-### Other Platforms
-
-Build the static files:
-
-```bash
+# Build for production
 npm run build
 ```
 
-Deploy the `dist/` folder to any static hosting (Netlify, GitHub Pages, IPFS, etc.)
+### Option 3: One-click deploy
 
-## ⚠️ Important: Domain Whitelisting
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/breakglass)
 
-**You must add your BreakGlass deployment URL to your Privy dashboard's "Allowed Domains" list.**
+## ⚙️ Configuration
 
-This is required because MPC providers lock their SDKs to specific domains for security.
+### Environment Variables (Optional)
 
-Example setup:
-- Main app: `app.yourcompany.com`
-- BreakGlass: `recovery.yourcompany.com` ← Add this to Privy
+Create a `.env` file to pre-configure your App ID:
 
-## Tech Stack
+```env
+VITE_PRIVY_APP_ID=clxxxxxxxxxxxxxxxxxx
+```
 
-- **Framework:** React 18 + Vite
-- **Blockchain:** viem (lightweight ethers.js alternative)
-- **Auth:** @privy-io/react-auth
-- **Styling:** Pure CSS with retro pixel aesthetic
+If set, users won't need to enter the App ID manually.
 
-## Project Structure
+### Domain Whitelisting (Required)
+
+**This is critical.** MPC providers lock their SDKs to specific domains for security. You must add your BreakGlass deployment URL to your provider's allowed domains:
+
+| Provider | Dashboard URL |
+|----------|--------------|
+| Privy | [dashboard.privy.io](https://dashboard.privy.io) → Settings → Allowed Domains |
+| Web3Auth | [dashboard.web3auth.io](https://dashboard.web3auth.io) → Project → Whitelist |
+| Dynamic | [app.dynamic.xyz](https://app.dynamic.xyz) → Settings → Allowed Origins |
+| Turnkey | [app.turnkey.com](https://app.turnkey.com) → Organization Settings |
+
+## 📖 How It Works
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        BreakGlass                           │
+├─────────────────────────────────────────────────────────────┤
+│  1. User enters App ID (or uses pre-configured)             │
+│  2. User logs in with same method as original app           │
+│  3. MPC provider reconstructs wallet in browser             │
+│  4. User can view balances and transfer funds               │
+│  5. Transactions signed locally, broadcast to blockchain    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Security Model
+
+- **Client-side only**: All cryptographic operations happen in your browser
+- **No backend**: We don't run any servers that touch your keys
+- **Open source**: Audit the code yourself
+- **Direct RPC**: Transactions go directly to public blockchain RPCs
+
+## 🛠️ Development
+
+### Tech Stack
+
+- **React 19** + **TypeScript** — Modern, type-safe UI
+- **Vite 7** — Fast builds and HMR
+- **viem** — Lightweight blockchain interactions
+- **Privy SDK** — MPC wallet integration (more providers coming)
+
+### Project Structure
 
 ```
 src/
-├── adapters/          # MPC provider adapters (Privy, etc.)
-│   ├── types.ts       # MPCAdapter interface
-│   ├── privy.ts       # Privy implementation
-│   └── index.ts       # Adapter registry
-├── chains/            # Chain configurations
-│   └── config.ts      # Supported chains + RPCs
-├── components/        # React components
-│   ├── ConfigScreen   # App ID input
-│   ├── LoginScreen    # Social auth
-│   ├── Dashboard      # Balance display
-│   ├── AddToken       # Custom token input
-│   └── SweepModal     # Emergency sweep
-├── hooks/             # Custom hooks
-│   ├── useMPCAdapter  # Generic adapter hook
-│   ├── useTokens      # ERC20 token management
-│   └── useNativeBalance
-├── App.tsx
-└── main.tsx
+├── adapters/           # MPC provider integrations
+│   ├── privy.ts        # Privy adapter implementation
+│   └── types.ts        # Universal adapter interface
+├── chains/             # Blockchain configurations
+│   └── config.ts       # Supported chains and RPCs
+├── components/         # React components
+│   ├── ConfigScreen    # App ID input screen
+│   ├── LoginScreen     # Authentication screen
+│   ├── Dashboard       # Main wallet view
+│   └── SweepModal      # Transfer funds modal
+├── hooks/              # Custom React hooks
+│   ├── useNativeBalance.ts
+│   └── useTokens.ts
+└── App.tsx             # Main application logic
 ```
 
-## Adding New MPC Providers (Phase 2)
+### Adding a New MPC Provider
 
-1. Create a new adapter in `src/adapters/` implementing the `MPCAdapter` interface
-2. Export it from `src/adapters/index.ts`
-3. Update `useMPCAdapter` hook to support the new provider
-4. Add provider selection UI in ConfigScreen
+1. Create a new adapter in `src/adapters/`:
 
-## Security
+```typescript
+// src/adapters/yourprovider.ts
+import type { MPCAdapter } from './types';
 
-- **Client-side only** - No server, no data collection
-- **No key storage** - Private keys exist only in memory during session
-- **Open source** - Fully auditable code
-- **Minimal dependencies** - Easier to verify
+export function useYourProviderAdapter(chainId: number): MPCAdapter {
+  return {
+    init: async () => { /* Initialize SDK */ },
+    login: async () => { /* Trigger login */ },
+    logout: async () => { /* Logout */ },
+    isAuthenticated: false,
+    isLoading: false,
+    getAddress: () => null,
+    sendTransaction: async (tx, options) => { /* Send tx */ },
+    providerName: 'YourProvider',
+  };
+}
+```
 
-## License
+2. Add the provider to `src/components/ConfigScreen.tsx`:
 
-MIT
+```typescript
+const PROVIDERS: ProviderOption[] = [
+  // ...existing providers
+  { id: 'yourprovider', name: 'YourProvider', available: true },
+];
+```
+
+3. Add the wrapper in `src/App.tsx`:
+
+```typescript
+case 'yourprovider':
+  return <YourProviderWrapper appId={appId} onReset={handleReset} />;
+```
+
+### Running Tests
+
+```bash
+npm run test
+```
+
+### Linting
+
+```bash
+npm run lint
+```
+
+## 🌐 Supported Chains
+
+| Chain | Chain ID | Status |
+|-------|----------|--------|
+| Ethereum Mainnet | 1 | ✅ |
+| Polygon | 137 | ✅ |
+| Base | 8453 | ✅ |
+| Arbitrum One | 42161 | ✅ |
+| Sepolia (Testnet) | 11155111 | ✅ |
+
+## 🗺️ Roadmap
+
+- [x] **Phase 1**: Privy adapter (MVP)
+- [ ] **Phase 2**: Web3Auth, Dynamic, Turnkey, Magic adapters
+- [ ] **Phase 3**: Private key export UI
+- [ ] **Phase 4**: IPFS/Arweave hosting for maximum decentralization
+- [ ] **Phase 5**: npm package for easy integration
+
+## 🤝 Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+MIT License — see [LICENSE](LICENSE) for details.
+
+## 🙏 Acknowledgments
+
+Built by [0xMythril](https://twitter.com/0xMythril) after getting funds trapped 😢
 
 ---
 
-*Built with 💚 for user sovereignty*
+**Remember**: The best insurance is preparation. Deploy BreakGlass to your backup domain *before* you need it.
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║  "We are so confident in our product that we built the      ║
+║   door for you to leave if we ever disappear."              ║
+╚══════════════════════════════════════════════════════════════╝
+```
