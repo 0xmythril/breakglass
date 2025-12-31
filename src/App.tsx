@@ -24,7 +24,7 @@ const ErrorContext = createContext<ErrorContextType>({
   clearError: () => {},
 });
 
-export function useLoginError() {
+function useLoginError() {
   return useContext(ErrorContext);
 }
 
