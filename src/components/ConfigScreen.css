@@ -18,9 +18,13 @@
 }
 
 .config-header h1 {
-  font-size: 2rem;
+  /* Single-word logo: scale down on narrow devices to prevent overflow */
+  font-size: clamp(1rem, 8vw, 2rem);
   margin: 0;
-  letter-spacing: 4px;
+  letter-spacing: clamp(0px, 0.9vw, 4px);
+  max-width: 100%;
+  display: inline-block;
+  white-space: nowrap;
 }
 
 .tagline {
