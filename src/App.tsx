@@ -1,32 +1,16 @@
-import { useState, useEffect, createContext, useContext, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { PrivyProvider, usePrivy } from '@privy-io/react-auth';
 import { ConfigScreen, LoginScreen, Dashboard } from './components';
 import type { MPCProvider } from './components';
 import { usePrivyAdapter } from './adapters/privy';
 import { DEFAULT_CHAIN_ID } from './chains/config';
+import { ErrorContext, useLoginError } from './contexts/loginError';
 import './index.css';
 
 // Check for environment variable
 const ENV_APP_ID = import.meta.env.VITE_PRIVY_APP_ID;
 const STORAGE_KEY_APP_ID = 'breakglass_app_id';
 const STORAGE_KEY_PROVIDER = 'breakglass_provider';
-
-// Error context to pass errors from Privy callbacks to components
-interface ErrorContextType {
-  error: string;
-  setError: (error: string) => void;
-  clearError: () => void;
-}
-
-const ErrorContext = createContext<ErrorContextType>({
-  error: '',
-  setError: () => {},
-  clearError: () => {},
-});
-
-export function useLoginError() {
-  return useContext(ErrorContext);
-}
 
 function parsePrivyError(error: unknown): string {
   const errorStr = String(error);

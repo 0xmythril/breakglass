@@ -1,8 +1,11 @@
 # 🔓 BreakGlass
 
-**Recover funds from embedded wallets — even if the original app goes offline.**
+**Recover funds from embedded wallet.**
 
-BreakGlass is an open-source, self-hostable emergency recovery tool for MPC (Multi-Party Computation) embedded wallets. It provides users with a way to access and transfer their funds if the main application frontend or backend becomes unavailable.
+BreakGlass is a tiny, self-hostable **developer recovery UI** for embedded MPC wallets (starting with **Privy**).
+It exists for the common “oh no” moment during development/testing: **funds end up in an embedded wallet, but your app doesn’t have a withdrawal / transfer UI yet** — so you need a safe, minimal frontend to move them out.
+
+Secondary use-case: teams can keep this around as a backup interface on a separate domain.
 
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue)
@@ -11,46 +14,51 @@ BreakGlass is an open-source, self-hostable emergency recovery tool for MPC (Mul
 
 ## 🎯 The Problem
 
-Embedded wallets (like those from Privy, Web3Auth, Dynamic, etc.) are great for user experience — no seed phrases to manage, just login with Google/Apple/Email. But they introduce **vendor & frontend risk**:
+Embedded wallets (Privy, Web3Auth, Dynamic, etc.) are great UX — no seed phrases, just login. But during builds, launches, migrations, and incidents you can get stuck:
 
-- If the startup shuts down, users lose access to their funds
-- If the main frontend goes offline (AWS/Vercel outage), users can't access their wallet
-- Users only have their social login — they depend entirely on the app's interface
+- You funded an embedded wallet in staging/devnet/mainnet while testing.
+- Your product doesn’t expose a “transfer out” flow yet (or it’s broken).
+- You need a simple UI to authenticate with the **same provider + app config** and send assets to a safe external address.
 
 ## 💡 The Solution
 
-BreakGlass is a **lightweight, client-side-only** recovery interface that:
+BreakGlass is a **lightweight, client-side-only** transfer interface that:
 
-1. Connects to the same MPC provider (Privy, Web3Auth, etc.)
-2. Authenticates using the same social login method
-3. Reconstructs the wallet in-browser
-4. Allows users to transfer funds to an external wallet (MetaMask, etc.)
+1. Uses your MPC provider’s SDK (MVP: **Privy**)
+2. Authenticates with the same login method (email / Google / Apple / etc.)
+3. Loads the embedded wallet in-browser
+4. Lets you **transfer native + ERC20s** (including custom token addresses) to an external wallet
 
-**No backend required. No data stored. Fully auditable.**
+**No backend required. No data stored by BreakGlass. Fully auditable.**
+
+## ✅ Who this is for
+
+- **Developers/teams** who control the embedded wallet configuration (e.g., you have access to your **Privy dashboard**) and need an emergency “transfer out” UI.
+- **Power users** who are instructed by the app owner to use a specific BreakGlass deployment for recovery.
+
+## ❌ Who this is NOT for
+
+- People trying to recover funds from **someone else’s app** (e.g., “give me OpenSea’s Privy App ID”).
+  Privy (and similar providers) enforce **allowed domains / origins**, and you must use the **correct App ID** that’s configured to trust the domain you’re running BreakGlass on.
 
 ## ✨ Features
 
 - 🔐 **Client-side only** — Private keys never leave your browser
-- 🌐 **Multi-chain support** — Ethereum, Polygon, Base, Arbitrum, Sepolia
-- 💸 **Transfer native tokens & ERC20s** — ETH, POL, USDC, and custom tokens
-- ⛽ **Gas sponsorship toggle** — Use app-sponsored gas if configured
+- 🌐 **Multi-chain support** — Ethereum, Polygon (POL), Base, Arbitrum, Sepolia
+- 💸 **Transfer native tokens & ERC20s** — plus **custom token addresses**
+- ⛽ **Gas sponsorship toggle** — uses Privy sponsorship **if enabled in your Privy dashboard**
 - 🎨 **Retro/pixel aesthetic** — Distinctive emergency-mode UI
 - 📱 **Mobile responsive** — Works on all devices
 - 🔧 **Self-hostable** — Deploy to your own domain
+- 🧩 **Provider selector** — Privy is **LIVE**, others marked **SOON** (roadmap)
 
 ## 🚀 Quick Start
 
-### Option 1: Use the hosted version
-
-Visit the hosted BreakGlass instance and enter your app's Privy App ID.
-
-> ⚠️ **Important**: The domain you access BreakGlass from must be whitelisted in the MPC provider's dashboard.
-
-### Option 2: Deploy your own
+### Option 1: Deploy your own (recommended)
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/breakglass.git
+git clone https://github.com/0xmythril/breakglass.git
 cd breakglass
 
 # Install dependencies
@@ -63,9 +71,19 @@ npm run dev
 npm run build
 ```
 
-### Option 3: One-click deploy
+### Option 2: One-click deploy (Vercel)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/breakglass)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/0xmythril/breakglass)
+
+## 🧯 1-minute “my funds are stuck” runbook
+
+1. Deploy BreakGlass (Vercel is easiest).
+2. In Privy Dashboard → **Allowed Domains**, add:
+   - your BreakGlass URL (e.g. `https://your-breakglass.vercel.app`)
+   - `http://localhost:5173` (optional for local dev)
+3. Open BreakGlass → select **Privy** → enter your **Privy App ID**.
+4. Login using the same method you used to create/fund the embedded wallet.
+5. In the dashboard, choose the chain, add any token addresses you need, set amounts, set destination, and hit **Transfer**.
 
 ## ⚙️ Configuration
 
@@ -81,14 +99,14 @@ If set, users won't need to enter the App ID manually.
 
 ### Domain Whitelisting (Required)
 
-**This is critical.** MPC providers lock their SDKs to specific domains for security. You must add your BreakGlass deployment URL to your provider's allowed domains:
+**This is critical.** MPC providers lock their SDKs to specific domains/origins. You must add your BreakGlass deployment URL to your provider's allowed domains.
 
 | Provider | Dashboard URL |
 |----------|--------------|
-| Privy | [dashboard.privy.io](https://dashboard.privy.io) → Settings → Allowed Domains |
-| Web3Auth | [dashboard.web3auth.io](https://dashboard.web3auth.io) → Project → Whitelist |
-| Dynamic | [app.dynamic.xyz](https://app.dynamic.xyz) → Settings → Allowed Origins |
-| Turnkey | [app.turnkey.com](https://app.turnkey.com) → Organization Settings |
+| Privy (LIVE) | [dashboard.privy.io](https://dashboard.privy.io) → Settings → Allowed Domains |
+| Web3Auth (SOON) | [dashboard.web3auth.io](https://dashboard.web3auth.io) |
+| Dynamic (SOON) | [app.dynamic.xyz](https://app.dynamic.xyz) |
+| Turnkey (SOON) | [app.turnkey.com](https://app.turnkey.com) |
 
 ## 📖 How It Works
 
@@ -110,6 +128,12 @@ If set, users won't need to enter the App ID manually.
 - **No backend**: We don't run any servers that touch your keys
 - **Open source**: Audit the code yourself
 - **Direct RPC**: Transactions go directly to public blockchain RPCs
+
+### Important limitations (by design)
+
+- **This is not a bypass**: you can’t use BreakGlass to access an embedded wallet from an unrelated app. You need the **correct App ID** and the BreakGlass domain must be **allowed** in the provider dashboard.
+- **No private key export (yet)**: Privy embedded wallets don’t expose raw keys via this app; BreakGlass focuses on **transfer out**.
+- **Gas sponsorship is optional**: if sponsorship is off (or not configured), your embedded wallet must have native gas to transfer.
 
 ## 🛠️ Development
 
@@ -162,7 +186,7 @@ export function useYourProviderAdapter(chainId: number): MPCAdapter {
 }
 ```
 
-2. Add the provider to `src/components/ConfigScreen.tsx`:
+2. Add the provider to the selector in `src/components/ConfigScreen.tsx`:
 
 ```typescript
 const PROVIDERS: ProviderOption[] = [
@@ -171,17 +195,11 @@ const PROVIDERS: ProviderOption[] = [
 ];
 ```
 
-3. Add the wrapper in `src/App.tsx`:
+3. Wire it up in `src/App.tsx`’s provider switch (and render your provider’s SDK provider wrapper):
 
 ```typescript
 case 'yourprovider':
   return <YourProviderWrapper appId={appId} onReset={handleReset} />;
-```
-
-### Running Tests
-
-```bash
-npm run test
 ```
 
 ### Linting
@@ -195,7 +213,7 @@ npm run lint
 | Chain | Chain ID | Status |
 |-------|----------|--------|
 | Ethereum Mainnet | 1 | ✅ |
-| Polygon | 137 | ✅ |
+| Polygon (POL) | 137 | ✅ |
 | Base | 8453 | ✅ |
 | Arbitrum One | 42161 | ✅ |
 | Sepolia (Testnet) | 11155111 | ✅ |
@@ -224,7 +242,7 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ## 🙏 Acknowledgments
 
-Built by [0xMythril](https://twitter.com/0xMythril) after getting funds trapped 😢
+Built by [0xMythril](https://x.com/0xmythril) after getting funds trapped 😢
 
 ---
 
