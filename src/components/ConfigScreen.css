@@ -15,12 +15,18 @@
 .config-header {
   text-align: center;
   margin-bottom: 1.5rem;
+  /* Prevent the glitch layers / wide pixel font from spilling outside the border on narrow widths */
+  overflow-x: hidden;
 }
 
 .config-header h1 {
-  font-size: 2rem;
+  /* Press Start 2P is very wide; use fluid sizing so BREAKGLASS always fits */
+  font-size: clamp(1.25rem, 7vw, 2rem);
   margin: 0;
-  letter-spacing: 4px;
+  letter-spacing: clamp(1px, 0.9vw, 4px);
+  line-height: 1.1;
+  max-width: 100%;
+  white-space: nowrap;
 }
 
 .tagline {
@@ -130,12 +136,25 @@
 }
 
 @media (max-width: 480px) {
+  .config-header h1 {
+    /* Extra tightening for common small devices */
+    font-size: clamp(1.1rem, 8vw, 1.6rem);
+    letter-spacing: clamp(0.5px, 0.8vw, 2px);
+  }
+
   .provider-selector {
     grid-template-columns: repeat(2, 1fr);
   }
   
   .provider-btn .provider-name {
     font-size: 0.625rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .tagline {
+    font-size: 0.75rem;
+    letter-spacing: 1px;
   }
 }
 
